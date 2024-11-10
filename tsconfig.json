@@ -32,7 +32,7 @@
     ".next/types/**/*.ts",
     "**/*.ts",
     "**/*.tsx"
-  ],
+, "actions/create-class.js", "actions/join-class.js"  ],
   "exclude": [
     "node_modules"
   ]

@@ -1,5 +1,5 @@
-import connect from "../../../../libs/mongodb/mongoose";
-import User from "../../../../libs/models/user.model";
+import connect from "../../../../lib/mongodb/mongoose";
+import User from "../../../../lib/models/user.model";
 import bcrypt from "bcrypt";
 import { NextResponse } from "next/server";
 
