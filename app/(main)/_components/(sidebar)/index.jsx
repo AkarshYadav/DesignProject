@@ -2,7 +2,8 @@ import React from 'react'
 import { Wrapper } from './wrapper'
 import { Toggle } from './toggle'
 import { UserItem } from './user-item'
-
+import { EnrolledList } from './EnrolledList'
+import { TeachingList } from './TeachingList'
 
 
 export const Sidebar = () => {
@@ -13,7 +14,14 @@ export const Sidebar = () => {
                 <ul className="space-y-2 px-2">
                     <UserItem></UserItem>
                 </ul>
+                <ul>
+                <EnrolledList />
+                </ul>
+                <ul>
+                <TeachingList />
+                </ul>
             </div>
+           
         </Wrapper>
     )
 }

@@ -2,8 +2,14 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BookOpen, Users } from 'lucide-react';
 
-const ClassCard = ({ classData, isTeaching }) => (
-  <Card className="hover:shadow-lg transition-shadow">
+const ClassCard = ({ classData, isTeaching, onClassClick }) => {
+  const handleClick = () => {
+    onClassClick(classData._id);
+  };
+  return(
+  <Card 
+  className="hover:shadow-lg transition-shadow"
+  onClick={handleClick}>
     <CardHeader className="pb-3">
       <div className="flex justify-between items-start">
         <div>
@@ -35,6 +41,6 @@ const ClassCard = ({ classData, isTeaching }) => (
       )}
     </CardContent>
   </Card>
-);
+)};
 
 export default ClassCard;

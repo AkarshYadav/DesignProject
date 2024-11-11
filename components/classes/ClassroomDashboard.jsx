@@ -1,15 +1,25 @@
 "use client"
+
 import React from 'react';
 import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2 } from 'lucide-react';
 import ClassCard from './ClassCard';
 import axios from 'axios';
-
+import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 const ClassroomDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [classes, setClasses] = useState({ createdClasses: [], enrolledClasses: [] });
   const [error, setError] = useState(null);
+  const { data: session } = useSession();
+  const username = session?.user?.email?.split('@')[0];
+  const router = useRouter();
+
+  const handleClassClick = (classId) => {
+    // Navigate to the class page
+    router.push(`/u/${username}/${classId}`);
+  };
 
   useEffect(() => {
     const fetchClasses = async () => {
@@ -42,6 +52,7 @@ const ClassroomDashboard = () => {
             key={classItem._id} 
             classData={classItem} 
             isTeaching={isTeaching}
+            onClassClick={handleClassClick}
           />
         ))
       ) : (
@@ -79,17 +90,19 @@ const ClassroomDashboard = () => {
         </TabsList>
 
         <TabsContent value="enrolled">
-          <ClassGrid 
-            items={classes.enrolledClasses} 
-            isTeaching={false} 
-          />
+        <ClassGrid
+        items={classes.enrolledClasses}
+        isTeaching={false}
+        onClassClick={handleClassClick}
+      />
         </TabsContent>
 
         <TabsContent value="teaching">
-          <ClassGrid 
-            items={classes.createdClasses} 
-            isTeaching={true} 
-          />
+        <ClassGrid
+        items={classes.createdClasses}
+        isTeaching={true}
+        onClassClick={handleClassClick}
+      />
         </TabsContent>
       </Tabs>
     </div>

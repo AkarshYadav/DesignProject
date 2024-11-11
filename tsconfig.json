@@ -32,7 +32,7 @@
     ".next/types/**/*.ts",
     "**/*.ts",
     "**/*.tsx"
-, "actions/create-class.js", "actions/join-class.js"  ],
+, "actions/create-class.js", "actions/join-class.js", "app/(main)/_components/(sidebar)/wrapper.jsx", "app/(main)/_components/(sidebar)/user-item.jsx", "app/(main)/_components/(sidebar)/toggle.jsx", "app/(main)/_components/(sidebar)/index.jsx"  ],
   "exclude": [
     "node_modules"
   ]
