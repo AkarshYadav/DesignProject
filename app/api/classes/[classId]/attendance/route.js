@@ -14,7 +14,6 @@
             const φ2 = lat2 * Math.PI/180;
             const Δφ = (lat2-lat1) * Math.PI/180;
             const Δλ = (lon2-lon1) * Math.PI/180;
-
             const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
                     Math.cos(φ1) * Math.cos(φ2) *
                     Math.sin(Δλ/2) * Math.sin(Δλ/2);
@@ -34,7 +33,7 @@
                 }
 
                 const { location, radius, duration } = await req.json();
-                const classId = params.classId;
+                const classId =await params.classId;
 
                 // Verify user is the class creator
                 const classDoc = await Class.findById(classId);
@@ -101,7 +100,7 @@
                 }
 
                 const { sessionId, location } = await req.json();
-                const classId = params.classId;
+                const classId = await params.classId;
 
                 // Verify student enrollment
                 const enrollment = await Enrollment.findOne({
@@ -195,7 +194,7 @@
                     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
                 }
 
-                const classId = params.classId;
+                const classId =await params.classId;
 
                 // Verify class access
                 const enrollment = await Enrollment.findOne({
@@ -250,7 +249,7 @@
                 }
 
                 const { sessionId } = await req.json();
-                const classId = params.classId;
+                const classId =await params.classId;
 
                 // Verify user is the class creator
                 const classDoc = await Class.findById(classId);

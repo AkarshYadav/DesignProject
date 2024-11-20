@@ -8,12 +8,12 @@ export const useAttendance = (classId) => {
         hasMarked: false,
         endTime: null,
         loading: true,
-        error: null
+        error: null,
     });
 
     const refreshStatus = useCallback(async () => {
         try {
-            setState(prev => ({ ...prev, loading: true }));
+            setState((prev) => ({ ...prev, loading: true }));
             const response = await axios.get(`/api/classes/${classId}/attendance`);
             setState({
                 isActive: response.data.active,
@@ -21,64 +21,64 @@ export const useAttendance = (classId) => {
                 hasMarked: response.data.hasMarked,
                 endTime: response.data.endTime,
                 loading: false,
-                error: null
+                error: null,
             });
         } catch (error) {
-            setState(prev => ({
+            setState((prev) => ({
                 ...prev,
                 loading: false,
-                error: error?.response?.data?.error || 'Failed to fetch attendance status'
+                error: error?.response?.data?.error || 'Failed to fetch attendance status',
             }));
         }
     }, [classId]);
 
-    const startAttendance = async (location, duration) => {
+    const startAttendance = async ({ location, duration, radius }) => {
         try {
-            setState(prev => ({ ...prev, loading: true }));
+            setState((prev) => ({ ...prev, loading: true }));
             await axios.post(`/api/classes/${classId}/attendance`, {
                 location,
-                radius: 100,
-                duration
+                radius, // Include radius in the request
+                duration, // Include duration in the request
             });
             refreshStatus();
         } catch (error) {
-            setState(prev => ({
+            setState((prev) => ({
                 ...prev,
                 loading: false,
-                error: error?.response?.data?.error || 'Failed to start attendance'
+                error: error?.response?.data?.error || 'Failed to start attendance',
             }));
         }
     };
 
     const endAttendance = async () => {
         try {
-            setState(prev => ({ ...prev, loading: true }));
+            setState((prev) => ({ ...prev, loading: true }));
             await axios.patch(`/api/classes/${classId}/attendance`, {
-                sessionId: state.sessionId
+                sessionId: state.sessionId,
             });
             refreshStatus();
         } catch (error) {
-            setState(prev => ({
+            setState((prev) => ({
                 ...prev,
                 loading: false,
-                error: error?.response?.data?.error || 'Failed to end attendance'
+                error: error?.response?.data?.error || 'Failed to end attendance',
             }));
         }
     };
 
     const markAttendance = async (location) => {
         try {
-            setState(prev => ({ ...prev, loading: true }));
+            setState((prev) => ({ ...prev, loading: true }));
             await axios.put(`/api/classes/${classId}/attendance`, {
                 sessionId: state.sessionId,
-                location
+                location,
             });
             refreshStatus();
         } catch (error) {
-            setState(prev => ({
+            setState((prev) => ({
                 ...prev,
                 loading: false,
-                error: error?.response?.data?.error || 'Failed to mark attendance'
+                error: error?.response?.data?.error || 'Failed to mark attendance',
             }));
         }
     };
@@ -94,6 +94,6 @@ export const useAttendance = (classId) => {
         startAttendance,
         endAttendance,
         markAttendance,
-        refreshStatus
+        refreshStatus,
     };
 };

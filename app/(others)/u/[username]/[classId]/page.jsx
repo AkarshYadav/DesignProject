@@ -17,7 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import AttendanceHistory from '@/components/classes/AttendanceHistory';
 import StudentAnalytics from '@/components/classes/StudentAnalytics';
-// import LocationManager from '@/components/LocationManager';
+import LiveAttendanceList from '@/components/classes/LiveAttendanceList';
 
 const ClassPage = () => {
   const { data: session, status } = useSession();
@@ -108,32 +108,44 @@ const ClassPage = () => {
   }, [isActive, endTime, refreshStatus, totalDuration]);
 
   // Location handling
-  const handleLocationAction = async (action, duration = null) => {
+  const handleLocationAction = async (action, options = null) => {
     try {
       if (!navigator.geolocation) {
         throw new Error('Geolocation is not supported by your browser');
       }
-
+  
       if (action === 'end') {
         await endAttendance();
         return;
       }
-
+  
       const position = await new Promise((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(resolve, reject, {
           enableHighAccuracy: true,
           timeout: 5000,
-          maximumAge: 0
+          maximumAge: 0,
         });
       });
-
+  
       const location = {
         latitude: position.coords.latitude,
-        longitude: position.coords.longitude
+        longitude: position.coords.longitude,
       };
-
+  
       if (action === 'start') {
-        await startAttendance(location, duration);
+        const { duration, radius } = options || {};
+  
+        // Validate the presence of both duration and radius
+        if (!duration || !radius) {
+          throw new Error('Both duration and radius must be provided for starting attendance');
+        }
+  
+        await startAttendance({
+          location,
+          duration, // Pass duration in seconds
+          radius,   // Pass radius in meters
+        });
+  
         setTotalDuration(duration * 1000); // Convert seconds to milliseconds
       } else if (action === 'mark') {
         await markAttendance(location);
@@ -146,6 +158,7 @@ const ClassPage = () => {
       }
     }
   };
+  
 
   const handleCopyClassCode = () => {
     navigator.clipboard.writeText(classData?.classCode);
@@ -214,29 +227,30 @@ const ClassPage = () => {
             >
               Analytics
             </Button>
-            {userRole === 'teacher' && (
+            {/* {userRole === 'teacher' && (
               <Button
                 variant={selectedTab === 'locations' ? 'default' : 'outline'}
                 onClick={() => setSelectedTab('locations')}
               >
                 Locations
               </Button>
-            )}
+            )} */}
           </div>
 
           {selectedTab === 'attendance' && (
             userRole === 'teacher' ? (
               <TeacherView
-                classData={classData}
-                isActive={isActive}
-                sessionId={sessionId}
-                timeLeft={timeLeft}
-                progressValue={progressValue}
-                copied={copied}
-                onCopyCode={handleCopyClassCode}
-                onStartAttendance={(duration) => handleLocationAction('start', duration)}
-                onEndAttendance={() => handleLocationAction('end')}
-              />
+              classId={params.classId}
+              classData={classData}
+              isActive={isActive}
+              sessionId={sessionId}
+              timeLeft={timeLeft}
+              progressValue={progressValue}
+              copied={copied}
+              onCopyCode={handleCopyClassCode}
+              onStartAttendance={(options) => handleLocationAction('start', options)}
+              onEndAttendance={() => handleLocationAction('end')}
+            />            
             ) : (
               <StudentView
                 classData={classData}
@@ -248,9 +262,10 @@ const ClassPage = () => {
               />
             )
           )}
-
+    
           {selectedTab === 'history' && (
             <AttendanceHistory classId={params.classId} userRole={userRole} />
+            
           )}
 
           {selectedTab === 'analytics' && (
@@ -272,6 +287,7 @@ const ClassPage = () => {
 
 // Teacher view component
 const TeacherView = ({
+  classId,
   classData,
   isActive,
   timeLeft,
@@ -283,13 +299,16 @@ const TeacherView = ({
 }) => {
   const [showDurationModal, setShowDurationModal] = useState(false);
   const [duration, setDuration] = useState(5); // Default 5 minutes
-
+  const [radius, setRadius] = useState(100);
   const handleStartAttendance = () => {
       setShowDurationModal(true);
   };
 
   const handleConfirmStart = () => {
-    onStartAttendance(duration * 60); // Convert minutes to seconds
+    onStartAttendance( {
+      duration: duration * 60, // Convert minutes to seconds
+      radius // Pass radius in meters
+    }); 
     setShowDurationModal(false);
 };
 
@@ -351,8 +370,13 @@ const TeacherView = ({
                           Time Remaining: {timeLeft}
                       </span>
                   )}
+                
               </div>
-
+              {
+                    isActive ?(
+                      <LiveAttendanceList classId={classId} />
+                    ):("")
+                  }
               {isActive && (
                   <div className="space-y-2">
                       <Progress value={progressValue} className="w-full" />
@@ -385,6 +409,17 @@ const TeacherView = ({
                                   max={60}
                               />
                           </div>
+              <div className="flex items-center gap-4">
+                <Label htmlFor="radius">Attendance Radius (meters)</Label>
+                <Input
+                  id="radius"
+                  type="number"
+                  value={radius}
+                  onChange={(e) => setRadius(Number(e.target.value))}
+                  min={10}
+                  max={500}
+                />
+              </div>
                       </div>
                       <DialogFooter>
                           <Button variant="outline" onClick={() => setShowDurationModal(false)}>

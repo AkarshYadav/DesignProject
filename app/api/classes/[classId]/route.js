@@ -11,7 +11,7 @@ export async function GET(request, { params }) {
     await connect();
 
     // Extract classId from the URL parameters
-    const classId = params.classId;
+    const classId = await params.classId;
     
     if (!classId) {
       return NextResponse.json(

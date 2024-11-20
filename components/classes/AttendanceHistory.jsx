@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
@@ -8,14 +10,17 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import { Download } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 
 const AttendanceHistory = ({ classId, userRole }) => {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState({ from: null, to: null });
+  const [totalSessions, setTotalSessions] = useState(0);
+  const [selectedSession, setSelectedSession] = useState(null);
 
   useEffect(() => {
     fetchSessions();
@@ -23,6 +28,7 @@ const AttendanceHistory = ({ classId, userRole }) => {
 
   const fetchSessions = async () => {
     try {
+      setLoading(true);
       const response = await axios.get(`/api/classes/${classId}/attendance/history`, {
         params: {
           from: dateRange.from?.toISOString(),
@@ -30,6 +36,7 @@ const AttendanceHistory = ({ classId, userRole }) => {
         }
       });
       setSessions(response.data.sessions);
+      setTotalSessions(response.data.totalSessions);
     } catch (error) {
       console.error('Failed to fetch sessions:', error);
     } finally {
@@ -37,40 +44,92 @@ const AttendanceHistory = ({ classId, userRole }) => {
     }
   };
 
-  const handleExport = async () => {
-    try {
-      const response = await axios.get(`/api/classes/${classId}/attendance/export`, {
-        responseType: 'blob'
-      });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', 'attendance_history.csv');
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (error) {
-      console.error('Failed to export attendance:', error);
-    }
+  const viewSessionDetails = (session) => {
+    setSelectedSession(session);
+  };
+
+  const renderSessionDetailsDialog = () => {
+    if (!selectedSession) return null;
+
+    return (
+      <Dialog open={!!selectedSession} onOpenChange={() => setSelectedSession(null)}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Session Attendance Details</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <strong>Date:</strong> {new Date(selectedSession.startTime).toLocaleString()}
+              </div>
+              <div>
+                <strong>Duration:</strong> {selectedSession.duration} minutes
+              </div>
+              <div>
+                <strong>Attendance:</strong> {selectedSession.attendees.length} / {selectedSession.totalStudents} 
+                ({selectedSession.attendancePercentage}%)
+              </div>
+            </div>
+            
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>S.No</TableHead>
+                  <TableHead>College ID</TableHead>
+                  <TableHead>Attendance</TableHead>
+                  <TableHead>Marked At</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {selectedSession.enrolledStudents.map((student, index) => (
+                  <TableRow key={student._id}>
+                    <TableCell>{index + 1}</TableCell>
+                    <TableCell>{student.collegeId}</TableCell>
+                    <TableCell>{student.name}</TableCell>
+                    <TableCell>
+                      <Badge variant={student.attended ? 'default' : 'destructive'}>
+                        {student.attended ? 'Present' : 'Absent'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {student.attended && student.markedAt 
+                        ? new Date(student.markedAt).toLocaleTimeString() 
+                        : '-'}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
   };
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div className="flex gap-4">
-          <Calendar
-            mode="range"
-            selected={{ from: dateRange.from, to: dateRange.to }}
-            onSelect={(range) => setDateRange(range)}
-            className="rounded-md border"
-          />
-        </div>
-        {userRole === 'teacher' && (
-          <Button onClick={handleExport}>
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
-        )}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Total Sessions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalSessions}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Date Range Filter</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Calendar
+              mode="range"
+              selected={{ from: dateRange.from, to: dateRange.to }}
+              onSelect={(range) => setDateRange(range)}
+              className="rounded-md border"
+            />
+          </CardContent>
+        </Card>
       </div>
 
       <Table>
@@ -80,21 +139,42 @@ const AttendanceHistory = ({ classId, userRole }) => {
             <TableHead>Duration</TableHead>
             <TableHead>Attendees</TableHead>
             <TableHead>Percentage</TableHead>
+            <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sessions.map((session) => (
-            <TableRow key={session._id}>
-              <TableCell>{new Date(session.startTime).toLocaleDateString()}</TableCell>
-              <TableCell>{session.duration} minutes</TableCell>
-              <TableCell>{session.attendees.length}</TableCell>
-              <TableCell>{session.attendancePercentage}%</TableCell>
+          {loading ? (
+            <TableRow>
+              <TableCell colSpan={5} className="text-center">Loading...</TableCell>
             </TableRow>
-          ))}
+          ) : sessions.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={5} className="text-center">No attendance sessions found</TableCell>
+            </TableRow>
+          ) : (
+            sessions.map((session) => (
+              <TableRow key={session._id}>
+                <TableCell>{new Date(session.startTime).toLocaleDateString()}</TableCell>
+                <TableCell>{session.duration} minutes</TableCell>
+                <TableCell>{session.attendees.length} / {session.totalStudents}</TableCell>
+                <TableCell>{session.attendancePercentage}%</TableCell>
+                <TableCell>
+                  <button 
+                    className="text-blue-600 hover:underline"
+                    onClick={() => viewSessionDetails(session)}
+                  >
+                    View Details
+                  </button>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
         </TableBody>
       </Table>
+
+      {renderSessionDetailsDialog()}
     </div>
   );
 };
 
-export default AttendanceHistory
+export default AttendanceHistory;
