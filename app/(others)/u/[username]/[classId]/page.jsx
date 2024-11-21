@@ -18,7 +18,8 @@ import { Input } from '@/components/ui/input';
 import AttendanceHistory from '@/components/classes/AttendanceHistory';
 import StudentAnalytics from '@/components/classes/StudentAnalytics';
 import LiveAttendanceList from '@/components/classes/LiveAttendanceList';
-
+import StudentAttendanceHistory from '@/components/classes/StudentAttendanceHistory';
+import StudentPersonalAnalytics from '@/components/classes/StudentPersonalAnalytics';
 const ClassPage = () => {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -76,7 +77,7 @@ const ClassPage = () => {
 
     if (isActive && endTime) {
       const end = new Date(endTime).getTime();
-      
+
       // Calculate total duration when session starts
       if (!totalDuration) {
         const start = Date.now();
@@ -113,12 +114,12 @@ const ClassPage = () => {
       if (!navigator.geolocation) {
         throw new Error('Geolocation is not supported by your browser');
       }
-  
+
       if (action === 'end') {
         await endAttendance();
         return;
       }
-  
+
       const position = await new Promise((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(resolve, reject, {
           enableHighAccuracy: true,
@@ -126,26 +127,26 @@ const ClassPage = () => {
           maximumAge: 0,
         });
       });
-  
+
       const location = {
         latitude: position.coords.latitude,
         longitude: position.coords.longitude,
       };
-  
+
       if (action === 'start') {
         const { duration, radius } = options || {};
-  
+
         // Validate the presence of both duration and radius
         if (!duration || !radius) {
           throw new Error('Both duration and radius must be provided for starting attendance');
         }
-  
+
         await startAttendance({
           location,
           duration, // Pass duration in seconds
           radius,   // Pass radius in meters
         });
-  
+
         setTotalDuration(duration * 1000); // Convert seconds to milliseconds
       } else if (action === 'mark') {
         await markAttendance(location);
@@ -158,7 +159,7 @@ const ClassPage = () => {
       }
     }
   };
-  
+
 
   const handleCopyClassCode = () => {
     navigator.clipboard.writeText(classData?.classCode);
@@ -227,30 +228,23 @@ const ClassPage = () => {
             >
               Analytics
             </Button>
-            {/* {userRole === 'teacher' && (
-              <Button
-                variant={selectedTab === 'locations' ? 'default' : 'outline'}
-                onClick={() => setSelectedTab('locations')}
-              >
-                Locations
-              </Button>
-            )} */}
+
           </div>
 
           {selectedTab === 'attendance' && (
             userRole === 'teacher' ? (
               <TeacherView
-              classId={params.classId}
-              classData={classData}
-              isActive={isActive}
-              sessionId={sessionId}
-              timeLeft={timeLeft}
-              progressValue={progressValue}
-              copied={copied}
-              onCopyCode={handleCopyClassCode}
-              onStartAttendance={(options) => handleLocationAction('start', options)}
-              onEndAttendance={() => handleLocationAction('end')}
-            />            
+                classId={params.classId}
+                classData={classData}
+                isActive={isActive}
+                sessionId={sessionId}
+                timeLeft={timeLeft}
+                progressValue={progressValue}
+                copied={copied}
+                onCopyCode={handleCopyClassCode}
+                onStartAttendance={(options) => handleLocationAction('start', options)}
+                onEndAttendance={() => handleLocationAction('end')}
+              />
             ) : (
               <StudentView
                 classData={classData}
@@ -262,19 +256,26 @@ const ClassPage = () => {
               />
             )
           )}
-    
+
           {selectedTab === 'history' && (
-            <AttendanceHistory classId={params.classId} userRole={userRole} />
-            
+            userRole === 'teacher' ? (
+              <AttendanceHistory classId={params.classId} userRole={userRole} />
+            ) : (
+              <StudentAttendanceHistory classId={params.classId} />
+            )
           )}
+
 
           {selectedTab === 'analytics' && (
-            <StudentAnalytics classId={params.classId} userRole={userRole} />
+            userRole === 'teacher' ? (
+              <StudentAnalytics classId={params.classId} userRole={userRole} />
+            ) : (
+              <StudentPersonalAnalytics classId={params.classId} />
+            )
           )}
 
-          {/* {selectedTab === 'locations' && userRole === 'teacher' && (
-            <LocationManager classId={params.classId} />
-          )} */}
+
+
         </CardContent>
       </Card>
     </div>
@@ -301,114 +302,114 @@ const TeacherView = ({
   const [duration, setDuration] = useState(5); // Default 5 minutes
   const [radius, setRadius] = useState(100);
   const handleStartAttendance = () => {
-      setShowDurationModal(true);
+    setShowDurationModal(true);
   };
 
   const handleConfirmStart = () => {
-    onStartAttendance( {
+    onStartAttendance({
       duration: duration * 60, // Convert minutes to seconds
       radius // Pass radius in meters
-    }); 
+    });
     setShowDurationModal(false);
-};
+  };
 
   return (
-      <div className="space-y-6">
-          <div className="flex items-center space-x-4">
-              <p className="text-sm font-medium">Class Code: {classData?.classCode}</p>
+    <div className="space-y-6">
+      <div className="flex items-center space-x-4">
+        <p className="text-sm font-medium">Class Code: {classData?.classCode}</p>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onCopyCode}
+          className="flex items-center gap-2"
+        >
+          {copied ? (
+            <>
+              <Check className="h-4 w-4" />
+              Copied!
+            </>
+          ) : (
+            <>
+              <Copy className="h-4 w-4" />
+              Copy Code
+            </>
+          )}
+        </Button>
+      </div>
+
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          {!isActive ? (
+            <Button
+              onClick={handleStartAttendance}
+              className="w-full sm:w-auto"
+            >
+              <MapPin className="h-4 w-4 mr-2" />
+              Start Attendance
+            </Button>
+          ) : (
+            <div className="flex gap-2 w-full sm:w-auto">
               <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={onCopyCode}
-                  className="flex items-center gap-2"
+                variant="secondary"
+                className="flex-1"
+                disabled={true}
               >
-                  {copied ? (
-                      <>
-                          <Check className="h-4 w-4" />
-                          Copied!
-                      </>
-                  ) : (
-                      <>
-                          <Copy className="h-4 w-4" />
-                          Copy Code
-                      </>
-                  )}
+                <Clock className="h-4 w-4 mr-2" />
+                Session Active
               </Button>
-          </div>
+              <Button
+                variant="destructive"
+                onClick={onEndAttendance}
+                className="flex-1"
+              >
+                End Session
+              </Button>
+            </div>
+          )}
+          {timeLeft && (
+            <span className="text-sm font-medium">
+              Time Remaining: {timeLeft}
+            </span>
+          )}
 
-          <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                  {!isActive ? (
-                      <Button
-                          onClick={handleStartAttendance}
-                          className="w-full sm:w-auto"
-                      >
-                          <MapPin className="h-4 w-4 mr-2" />
-                          Start Attendance
-                      </Button>
-                  ) : (
-                      <div className="flex gap-2 w-full sm:w-auto">
-                          <Button
-                              variant="secondary"
-                              className="flex-1"
-                              disabled={true}
-                          >
-                              <Clock className="h-4 w-4 mr-2" />
-                              Session Active
-                          </Button>
-                          <Button
-                              variant="destructive"
-                              onClick={onEndAttendance}
-                              className="flex-1"
-                          >
-                              End Session
-                          </Button>
-                      </div>
-                  )}
-                  {timeLeft && (
-                      <span className="text-sm font-medium">
-                          Time Remaining: {timeLeft}
-                      </span>
-                  )}
-                
+        </div>
+        {
+          isActive ? (
+            <LiveAttendanceList classId={classId} />
+          ) : ("")
+        }
+        {isActive && (
+          <div className="space-y-2">
+            <Progress value={progressValue} className="w-full" />
+            <div className="flex justify-between text-sm text-muted-foreground">
+              <span>Session Progress</span>
+              <span>{Math.round(progressValue)}% remaining</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {showDurationModal && (
+        <Dialog open={showDurationModal} onOpenChange={setShowDurationModal}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Set Attendance Duration</DialogTitle>
+              <DialogDescription>
+                Choose how long the attendance session should last
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="flex items-center gap-4">
+                <Label htmlFor="duration">Duration (minutes)</Label>
+                <Input
+                  id="duration"
+                  type="number"
+                  value={duration}
+                  onChange={(e) => setDuration(Number(e.target.value))}
+                  min={1}
+                  max={60}
+                />
               </div>
-              {
-                    isActive ?(
-                      <LiveAttendanceList classId={classId} />
-                    ):("")
-                  }
-              {isActive && (
-                  <div className="space-y-2">
-                      <Progress value={progressValue} className="w-full" />
-                      <div className="flex justify-between text-sm text-muted-foreground">
-                          <span>Session Progress</span>
-                          <span>{Math.round(progressValue)}% remaining</span>
-                      </div>
-                  </div>
-              )}
-          </div>
-
-          {showDurationModal && (
-              <Dialog open={showDurationModal} onOpenChange={setShowDurationModal}>
-                  <DialogContent>
-                      <DialogHeader>
-                          <DialogTitle>Set Attendance Duration</DialogTitle>
-                          <DialogDescription>
-                              Choose how long the attendance session should last
-                          </DialogDescription>
-                      </DialogHeader>
-                      <div className="grid gap-4 py-4">
-                          <div className="flex items-center gap-4">
-                              <Label htmlFor="duration">Duration (minutes)</Label>
-                              <Input
-                                  id="duration"
-                                  type="number"
-                                  value={duration}
-                                  onChange={(e) => setDuration(Number(e.target.value))}
-                                  min={1}
-                                  max={60}
-                              />
-                          </div>
               <div className="flex items-center gap-4">
                 <Label htmlFor="radius">Attendance Radius (meters)</Label>
                 <Input
@@ -420,24 +421,24 @@ const TeacherView = ({
                   max={500}
                 />
               </div>
-                      </div>
-                      <DialogFooter>
-                          <Button variant="outline" onClick={() => setShowDurationModal(false)}>
-                              Cancel
-                          </Button>
-                          <Button onClick={handleConfirmStart}>Start Session</Button>
-                      </DialogFooter>
-                  </DialogContent>
-              </Dialog>
-          )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowDurationModal(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleConfirmStart}>Start Session</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
 
-          {classData?.description && (
-              <div className="mt-6">
-                  <h3 className="text-lg font-semibold mb-2">About this class</h3>
-                  <p className="text-muted-foreground">{classData.description}</p>
-              </div>
-          )}
-      </div>
+      {classData?.description && (
+        <div className="mt-6">
+          <h3 className="text-lg font-semibold mb-2">About this class</h3>
+          <p className="text-muted-foreground">{classData.description}</p>
+        </div>
+      )}
+    </div>
   );
 };
 
@@ -457,7 +458,7 @@ const StudentView = ({
         <p className="text-muted-foreground">{classData.description}</p>
       </div>
     )}
-    
+
     {isActive && (
       <Card className="bg-secondary">
         <CardContent className="pt-6">
@@ -473,9 +474,9 @@ const StudentView = ({
                 {timeLeft} remaining
               </span>
             </div>
-            
+
             <Progress value={progressValue} className="w-full" />
-            
+
             {!hasMarked ? (
               <Button
                 onClick={onMarkAttendance}

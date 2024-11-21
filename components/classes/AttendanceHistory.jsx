@@ -85,7 +85,6 @@ const AttendanceHistory = ({ classId, userRole }) => {
                   <TableRow key={student._id}>
                     <TableCell>{index + 1}</TableCell>
                     <TableCell>{student.collegeId}</TableCell>
-                    <TableCell>{student.name}</TableCell>
                     <TableCell>
                       <Badge variant={student.attended ? 'default' : 'destructive'}>
                         {student.attended ? 'Present' : 'Absent'}
@@ -125,7 +124,7 @@ const AttendanceHistory = ({ classId, userRole }) => {
             <Calendar
               mode="range"
               selected={{ from: dateRange.from, to: dateRange.to }}
-              onSelect={(range) => setDateRange(range)}
+              onSelect={(range) =>(range && setDateRange(range))}
               className="rounded-md border"
             />
           </CardContent>
