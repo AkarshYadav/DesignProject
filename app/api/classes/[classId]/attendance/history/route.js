@@ -4,7 +4,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connect from '@/lib/mongodb/mongoose';
 import AttendanceSession from "@/lib/models/attendance.model";
 import Class from "@/lib/models/class.model";
-import Enrollment from "@/lib/models/enrollment.model"; // Assuming you have an enrollment model
+
 
 export async function GET(request, context) {
   await connect();
@@ -27,7 +27,7 @@ export async function GET(request, context) {
         path: 'enrollments',
         populate: {
           path: 'student',
-          select: 'name collegeId email' // Adjust fields as needed
+          select: 'name collegeId email'
         }
       });
 
@@ -90,6 +90,72 @@ export async function GET(request, context) {
     console.error('Attendance history fetch error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch attendance history' },
+      { status: 500 }
+    );
+  }
+}
+export async function PUT(request, context) {
+  await connect();
+
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { classId } = context.params;
+  const { sessionId, studentId, attended } = await request.json();
+
+  try {
+    // Verify the user is the class creator
+    const classData = await Class.findById(classId);
+    if (!classData || classData.creator.toString() !== session.user.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const attendanceSession = await AttendanceSession.findById(sessionId);
+    if (!attendanceSession) {
+      return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+    }
+
+    if (attended) {
+      // Add student to attendees if not already present
+      const isAlreadyPresent = attendanceSession.attendees.some(
+        a => a.student.toString() === studentId
+      );
+
+      if (!isAlreadyPresent) {
+        await AttendanceSession.findByIdAndUpdate(
+          sessionId,
+          {
+            $push: {
+              attendees: {
+                student: studentId,
+                markedAt: new Date(),
+                manuallyMarked: true
+              }
+            }
+          }
+        );
+      }
+    } else {
+      // Remove student from attendees
+      await AttendanceSession.findByIdAndUpdate(
+        sessionId,
+        {
+          $pull: {
+            attendees: {
+              student: studentId
+            }
+          }
+        }
+      );
+    }
+
+    return NextResponse.json({ message: 'Attendance updated successfully' });
+  } catch (error) {
+    console.error('Attendance update error:', error);
+    return NextResponse.json(
+      { error: 'Failed to update attendance' },
       { status: 500 }
     );
   }
