@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { useSidebar } from "@/store/use-sidebar"
 import Link from "next/link"
-
+import { Hint } from "@/components/hint"
 export const SidebarItem = ({ href, icon, label, isActive }) => {
   const { collapsed } = useSidebar((state) => state)
 

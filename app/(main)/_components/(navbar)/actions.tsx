@@ -13,10 +13,12 @@ import {
     DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
+import { useSidebar } from "@/store/use-sidebar";
+import { useMediaQuery } from "usehooks-ts";
 const Actions = () => {
     const { data: session, status } = useSession();
-
+    const { collapsed } = useSidebar((state) => state)
+    const matches = useMediaQuery("(max-width: 1024px)")
     if (status === "loading") {
         return <div className="h-8 w-8 animate-pulse bg-slate-200 rounded-full" />;
     }
@@ -30,7 +32,7 @@ const Actions = () => {
 
     return (
         <div className="flex items-center gap-x-2 ml-2 lg:ml-0 justify-end">
-            <div className="flex items-center">
+          {!matches &&( <div className="flex items-center">
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button
@@ -82,7 +84,7 @@ const Actions = () => {
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
-            </div>
+            </div>)}
         </div>
     );
 };

@@ -20,6 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { toast } from '../../hooks/use-toast';
 
+import { useSidebar } from "@/store/use-sidebar";
 const AttendanceHistory = ({ classId, userRole }) => {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,6 +30,8 @@ const AttendanceHistory = ({ classId, userRole }) => {
   const [editingStudent, setEditingStudent] = useState(null);
   const [updateLoading, setUpdateLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
+
+  const { collapsed } = useSidebar((state) => state);
 
   useEffect(() => {
     fetchSessions();
@@ -241,7 +244,6 @@ const AttendanceHistory = ({ classId, userRole }) => {
                 <TableRow>
                   <TableHead>S.No</TableHead>
                   <TableHead>College ID</TableHead>
-                  <TableHead>Name</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Marked At</TableHead>
                   <TableHead>Actions</TableHead>
@@ -252,7 +254,6 @@ const AttendanceHistory = ({ classId, userRole }) => {
                   <TableRow key={student._id}>
                     <TableCell>{index + 1}</TableCell>
                     <TableCell>{student.collegeId}</TableCell>
-                    <TableCell>{student.name}</TableCell>
                     <TableCell>
                       <Badge variant={student.attended ? 'default' : 'destructive'}>
                         {student.attended ? 'Present' : 'Absent'}
@@ -309,7 +310,7 @@ const AttendanceHistory = ({ classId, userRole }) => {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
+      <div className="flex  flex-col justify-between items-center">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-grow">
           <Card>
             <CardHeader>
@@ -336,7 +337,7 @@ const AttendanceHistory = ({ classId, userRole }) => {
         <Button 
           onClick={exportAttendanceToSheet}
           disabled={exportLoading || sessions.length === 0}
-          className="ml-4"
+          className="ml-4 mt-4"
         >
           {exportLoading ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />

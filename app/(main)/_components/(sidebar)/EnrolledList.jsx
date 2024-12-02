@@ -1,21 +1,26 @@
 'use client'
 
 import { SidebarItem } from "./SidebarItem"
-import { GraduationCap } from "lucide-react"
+import {  Users } from 'lucide-react';
 import { usePathname } from "next/navigation"
+import axios from 'axios'
 import useSWR from 'swr'
-
+import { useSession } from 'next-auth/react'
 const fetcher = async (url) => {
-  const response = await fetch(url)
-  if (!response.ok) {
-    throw new Error('Network response was not ok')
+  try {
+    const response = await axios.get(url)
+    return response.data
+  } catch (error) {
+    throw error
   }
-  return response.json()
 }
 
 export const EnrolledList = () => {
+  const { data: session } = useSession();
+  const username = session?.user?.email?.split('@')[0];
+
   const pathname = usePathname()
-  const { data, error, isLoading } = useSWR('/api/classes/enrolled', fetcher)
+  const { data, error, isLoading } = useSWR('/api/classes/dashboard', fetcher)
 
   if (isLoading) {
     return <div>Loading...</div>
@@ -27,11 +32,11 @@ export const EnrolledList = () => {
 
   return (
     <div className="space-y-2 px-2">
-      {data.enrolledClasses.map((enrolledClass) => (
+      {data?.enrolledClasses?.map((enrolledClass) => (
         <SidebarItem
           key={enrolledClass._id}
-          href={`/classes/${enrolledClass._id}`}
-          icon={<GraduationCap />}
+          href={`/u/${username}/${enrolledClass._id}`}
+          icon={<Users />}
           label={enrolledClass.className}
           isActive={pathname === `/classes/${enrolledClass._id}`}
         />

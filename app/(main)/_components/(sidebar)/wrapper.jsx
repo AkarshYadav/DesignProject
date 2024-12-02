@@ -4,9 +4,7 @@ import { useSidebar } from "@/store/use-sidebar";
 import { cn } from "@/lib/utils";
 
 
-// interface WrapperProps {
-//     children: React.ReactNode;
-// }
+
 export const Wrapper = ({ children }) => {
     const { collapsed } = useSidebar((state) => state);
     return (
